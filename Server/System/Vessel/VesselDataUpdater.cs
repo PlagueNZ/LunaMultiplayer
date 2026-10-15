@@ -26,15 +26,25 @@ namespace Server.System.Vessel
 
         /// <summary>
         /// Sets ORBIT IDENT from the reference body name when provided (e.g. from position or update messages).
+        /// PiMP: IDENT is "&lt;system&gt;/&lt;body&gt;" (e.g. "Squad/Kerbin"), so keep the existing "&lt;system&gt;/" prefix
+        /// and replace only the body. The PrincipiaBridge server plugin rewrites IDENT the same way when the
+        /// server moves a vessel to another body, and stops updating it once the prefix is gone.
         /// </summary>
         internal static void ApplyOrbitIdent(Classes.Vessel vessel, string bodyName)
         {
             if (string.IsNullOrEmpty(bodyName)) return;
 
-            if (vessel.Orbit.Exists("IDENT"))
-                vessel.Orbit.Update("IDENT", bodyName);
-            else
+            var current = vessel.Orbit.GetSingle("IDENT")?.Value;
+            if (current == null)
+            {
                 vessel.Orbit.Add(new CfgNodeValue<string, string>("IDENT", bodyName));
+                return;
+            }
+
+            var slash = current.IndexOf('/');
+            var ident = slash > 0 ? current.Substring(0, slash + 1) + bodyName : bodyName;
+            if (ident != current)
+                vessel.Orbit.Update("IDENT", ident);
         }
 
         /// <summary>
