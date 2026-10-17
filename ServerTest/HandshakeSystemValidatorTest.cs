@@ -29,6 +29,18 @@ namespace ServerTest
         }
 
         [TestMethod]
+        public void TestPimpRefusesStockVersions()
+        {
+            // PiMP: client and server are a matched pair on 0.31. Stock 0.29 and 0.30 builds
+            // (upstream's 0.30 <-> 0.29 cross-compatibility) must not be accepted.
+            Assert.AreEqual(0, LmpVersioning.CurrentVersion.Major);
+            Assert.AreEqual(31, LmpVersioning.CurrentVersion.Minor);
+            Assert.IsTrue(LmpVersioning.IsCompatible("0.31.0.2"));
+            Assert.IsFalse(LmpVersioning.IsCompatible("0.30.0.0"));
+            Assert.IsFalse(LmpVersioning.IsCompatible("0.29.2.0"));
+        }
+
+        [TestMethod]
         public void TestModValidationDisabled()
         {
             // Set server to NOT use a whitelist
