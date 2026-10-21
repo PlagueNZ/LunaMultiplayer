@@ -109,6 +109,58 @@ namespace Server.Plugin
         }
 
         //Fire OnUpdate
+        // PiMP (W1): the optional warp callbacks, only for plugins that implement IPimpWarpPlugin.
+        public static void FireOnSubspaceCreated(ClientStructure creator, int subspaceId, double serverTimeDifference)
+        {
+            lock (ListLock)
+            {
+                foreach (var plugin in LoadedPlugins.OfType<IPimpWarpPlugin>())
+                {
+                    try
+                    {
+                        plugin.OnSubspaceCreated(creator, subspaceId, serverTimeDifference);
+                    }
+                    catch (Exception e)
+                    {
+                        var type = plugin.GetType();
+                        LunaLog.Debug($"Error thrown in OnSubspaceCreated event for {type.FullName} " +
+                                      $"({type.Assembly.FullName}), Exception: {e}");
+                    }
+                }
+            }
+        }
+
+        public static void FireOnClientSubspaceChanged(ClientStructure client, int oldSubspace, int newSubspace)
+        {
+            lock (ListLock)
+            {
+                foreach (var plugin in LoadedPlugins.OfType<IPimpWarpPlugin>())
+                {
+                    try
+                    {
+                        plugin.OnClientSubspaceChanged(client, oldSubspace, newSubspace);
+                    }
+                    catch (Exception e)
+                    {
+                        var type = plugin.GetType();
+                        LunaLog.Debug($"Error thrown in OnClientSubspaceChanged event for {type.FullName} " +
+                                      $"({type.Assembly.FullName}), Exception: {e}");
+                    }
+                }
+            }
+        }
+
+        // PiMP (W1): lets ServerTest register a plugin without loading a DLL.
+        internal static void AddPluginForTest(ILmpPlugin plugin)
+        {
+            lock (ListLock) LoadedPlugins.Add(plugin);
+        }
+
+        internal static void RemovePluginForTest(ILmpPlugin plugin)
+        {
+            lock (ListLock) LoadedPlugins.Remove(plugin);
+        }
+
         public static void FireOnUpdate()
         {
             lock (ListLock)

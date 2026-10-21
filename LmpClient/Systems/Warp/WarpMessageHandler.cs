@@ -1,6 +1,7 @@
 ﻿using System.Collections.Concurrent;
 using LmpClient.Base;
 using LmpClient.Base.Interface;
+using LmpClient.Events;
 using LmpClient.Systems.SettingsSys;
 using LmpCommon.Enums;
 using LmpCommon.Message.Data.Warp;
@@ -55,6 +56,8 @@ namespace LmpClient.Systems.Warp
                             System.WaitingSubspaceIdFromServer = false;
                             System.SkipSubspaceProcess = true;
                             System.CurrentSubspace = data.SubspaceKey;
+                            var completed = data.SubspaceKey;
+                            System.QueuePimpEvent(() => WarpEvent.onWarpCompleted.Fire(completed));
                         }
                     }
                     break;

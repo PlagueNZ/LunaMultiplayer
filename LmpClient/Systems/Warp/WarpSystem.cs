@@ -35,7 +35,9 @@ namespace LmpClient.Systems.Warp
             {
                 if (_currentSubspace != value)
                 {
+                    var oldSubspace = _currentSubspace;
                     _currentSubspace = value;
+                    QueuePimpEvent(() => WarpEvent.onSubspaceChanged.Fire(oldSubspace, value));
 
                     if (!ClientSubspaceList.ContainsKey(SettingsSystem.CurrentSettings.PlayerName))
                         ClientSubspaceList.TryAdd(SettingsSystem.CurrentSettings.PlayerName, _currentSubspace);
@@ -73,9 +75,24 @@ namespace LmpClient.Systems.Warp
 
         protected override bool ProcessMessagesInUnityThread => false;
 
+        // PiMP (W1): warp events raised off the Unity thread, fired by FirePimpEvents in Update.
+        private readonly ConcurrentQueue<Action> _pimpEvents = new ConcurrentQueue<Action>();
+
+        public void QueuePimpEvent(Action fire) => _pimpEvents.Enqueue(fire);
+
+        private void FirePimpEvents()
+        {
+            while (_pimpEvents.TryDequeue(out var fire))
+            {
+                try { fire(); }
+                catch (Exception e) { LunaLog.LogError($"[LMP]: PiMP warp event handler threw: {e}"); }
+            }
+        }
+
         protected override void OnDisabled()
         {
             base.OnDisabled();
+            while (_pimpEvents.TryDequeue(out _)) { }
             GameEvents.onTimeWarpRateChanged.Remove(WarpEvents.OnTimeWarpChanged);
             GameEvents.onLevelWasLoadedGUIReady.Remove(WarpEvents.OnSceneChanged);
             ClientSubspaceList.Clear();
@@ -92,6 +109,7 @@ namespace LmpClient.Systems.Warp
             base.OnEnabled();
             GameEvents.onTimeWarpRateChanged.Add(WarpEvents.OnTimeWarpChanged);
             GameEvents.onLevelWasLoadedGUIReady.Add(WarpEvents.OnSceneChanged);
+            SetupRoutine(new RoutineDefinition(0, RoutineExecution.Update, FirePimpEvents));
             if (SettingsSystem.ServerSettings.WarpMode != WarpMode.None)
             {
                 SetupRoutine(new RoutineDefinition(100, RoutineExecution.Update, CheckWarpStopped));

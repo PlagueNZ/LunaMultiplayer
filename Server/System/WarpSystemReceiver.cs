@@ -4,6 +4,7 @@ using Server.Client;
 using Server.Context;
 using Server.Log;
 using Server.Server;
+using Server.Plugin;
 
 namespace Server.System
 {
@@ -33,7 +34,10 @@ namespace Server.System
                 msgData.SubspaceKey = WarpContext.NextSubspaceId;
 
                 MessageQueuer.SendToAllClients<WarpSrvMsg>(msgData);
+                var createdId = WarpContext.NextSubspaceId;
                 WarpContext.NextSubspaceId++;
+                // PiMP (W1): tell warp-aware plugins (the bridge) the moment the subspace exists.
+                LmpPluginHandler.FireOnSubspaceCreated(client, createdId, message.ServerTimeDifference);
 
                 // The server's latest time only advances when this new subspace is more future than every
                 // existing one; that is the moment when the operator-visible "server warps forward to match
@@ -70,6 +74,9 @@ namespace Server.System
                     //Try to remove their old subspace
                     WarpSystem.RemoveSubspace(oldSubspace);
                 }
+
+                // PiMP (W1): warp-aware plugins hear every move, including into -1 (warping).
+                LmpPluginHandler.FireOnClientSubspaceChanged(client, oldSubspace, newSubspace);
             }
         }
 
