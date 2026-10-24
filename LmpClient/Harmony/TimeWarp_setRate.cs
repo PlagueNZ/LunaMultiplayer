@@ -19,6 +19,9 @@ namespace LmpClient.Harmony
         {
             if (MainSystem.NetworkState < ClientState.Connected) return true;
 
+            // PiMP (warp plan W2; was the bridge's WarpGuard, part b): returning to 1x is always allowed,
+            // so LMP's own cancel works whatever started the warp.
+            if (rate_index == 0) return true;
             return WarpSystem.Singleton.WarpValidation();
         }
     }

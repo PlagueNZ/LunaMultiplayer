@@ -148,6 +148,13 @@ namespace LmpClient.Systems.TimeSync
         {
             Profiler.BeginSample(nameof(CheckGameTime));
 
+            // PiMP (warp plan W2): the clock policy decides first (was the bridge's ClockPolicy prefix).
+            if (!Pimp.PimpClockPolicy.BeforeCheck())
+            {
+                Profiler.EndSample();
+                return;
+            }
+
             if (Enabled && !CurrentlyWarping && CanSyncTime && !WarpSystem.Singleton.WaitingSubspaceIdFromServer)
             {
                 var targetTime = WarpSystem.Singleton.CurrentSubspaceTime;
@@ -207,6 +214,7 @@ namespace LmpClient.Systems.TimeSync
         /// </summary>
         public void SetGameTime(double targetTick)
         {
+            Pimp.PimpClockPolicy.CountJump();   // PiMP (W2): counted for the clock log
             if (double.IsNaN(targetTick) || double.IsInfinity(targetTick) || targetTick < 0)
             {
                 LunaLog.LogWarning($"[LMP]: Ignoring invalid game-time sync target {targetTick} — value is non-finite or negative. This indicates a server time-difference calculation error.");
