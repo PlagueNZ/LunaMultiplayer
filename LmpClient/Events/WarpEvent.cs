@@ -15,5 +15,10 @@ namespace LmpClient.Events
         // this game created at the end of its own warp.
         public static EventData<int, int> onSubspaceChanged;
         public static EventData<int> onWarpCompleted;
+
+        // PiMP (warp plan W3, 25 Oct 2026): the server's states of every vessel nobody flies, at one
+        // game time just after it caught up with a warp that ended in this game's subspace. Fired on
+        // the Unity thread with a copy of the message.
+        public static EventData<Pimp.PimpEndOfWarpStates> onAuthoritativeStates;
     }
 }

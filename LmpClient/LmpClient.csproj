@@ -154,6 +154,7 @@
     <Compile Include="Pimp\PimpPhysicsHook.cs" />
     <Compile Include="Pimp\PimpClockPolicy.cs" />
     <Compile Include="Pimp\PimpWarpGuard.cs" />
+    <Compile Include="Pimp\PimpEndOfWarpStates.cs" />
     <Compile Include="Extensions\AssemblyExtension.cs" />
     <Compile Include="Extensions\CelestialBodyExtension.cs" />
     <Compile Include="Extensions\ConfigNodeExtension.cs" />

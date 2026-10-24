@@ -67,6 +67,18 @@ namespace LmpClient.Systems.Warp
                         System.ClientSubspaceList[data.PlayerName] = data.Subspace;
                     }
                     break;
+                case WarpMessageType.AuthoritativeStates:
+                    {
+                        // PiMP (W3): copy now; the message is recycled when this returns.
+                        var states = Pimp.PimpEndOfWarpStates.From((WarpAuthoritativeStatesMsgData)msgData);
+                        LunaLog.Log($"[LMP][PiMP] End-of-warp states from the server: {states.VesselIds.Length} vessel(s) at t={states.Ut:F1}, subspace {states.Subspace}");
+                        System.QueuePimpEvent(() =>
+                        {
+                            states.ReceivedUt = Planetarium.GetUniversalTime();
+                            WarpEvent.onAuthoritativeStates.Fire(states);
+                        });
+                    }
+                    break;
                 default:
                     {
                         LunaLog.LogError($"[LMP]: Unhandled WARP_MESSAGE type: {msgData.WarpMessageType}");
