@@ -22,14 +22,14 @@ namespace Server.Pimp
     /// Stopping never lands anyone past a time: a stop becomes a target a little ahead (2 real
     /// seconds at the warp's rate), which the clock lands on exactly.
     /// </summary>
-    public static class PimpConsensusWarp
+    public static partial class PimpConsensusWarp
     {
         private static readonly object Gate = new object();
         private static volatile PimpWarpClock _clock;
         private static Timer _timer;
 
         /// <summary>Real seconds of warp a stop leaves, so games can land on the target.</summary>
-        public const double StopLeadS = 2;
+        public const double StopLeadS = 1;   // W4.3: 2 s was 2.3 days of game time at 100,000x
 
         public static long StartTicks => TimeContext.StartTime.Ticks;
         public static long NowTicks => LunaNetworkTime.UtcNow.Ticks;
@@ -71,6 +71,37 @@ namespace Server.Pimp
             }
         }
 
+        /// <summary>W4.3: starts a warp landing at universe time <paramref name="targetUt"/> (NaN: open). Called under Gate.</summary>
+        private static string StartAt(double rate, double targetUt, bool physics = false, double limit = double.NaN, string proposer = "")
+        {
+            if (WarpRunning) return "not started: a warp is running (" + _clock + ")";
+            var sub = WarpContext.LatestSubspace;
+            var now = NowTicks;
+            var offset = WarpContext.LatestSubspaceTime;
+            sub.Time = offset;
+            var u = (now - StartTicks) / 1e7 + offset;
+            Set(new PimpWarpClock(sub.Id, now, offset, rate, targetUt, physics, limit, proposer), "started at t=" + u.ToString("F1", CultureInfo.InvariantCulture));
+            return "started: " + _clock;
+        }
+
+        /// <summary>W4.3: the running warp continues from now at <paramref name="rate"/> towards <paramref name="targetUt"/>. Called under Gate.</summary>
+        private static void Rebase(double rate, double targetUt, string why, double limit = double.NaN)
+        {
+            var c = _clock;
+            var now = NowTicks;
+            if (c == null || !WarpRunning) return;
+            Set(new PimpWarpClock(c.SubspaceKey, now, c.OffsetAt(now, StartTicks), rate, targetUt, c.Physics, double.IsNaN(limit) ? c.Limit : limit, c.Proposer), why);
+        }
+
+        /// <summary>A consensus warp is running (not yet landed).</summary>
+        public static bool WarpRunning
+        {
+            get { var c = _clock; return c != null && c.IsWarping && !c.HasLanded(NowTicks, StartTicks); }
+        }
+
+        /// <summary>Universe time now.</summary>
+        public static double UniverseNow => WarpContext.UniverseTime;
+
         /// <summary>Stops the warp: it lands StopLeadS real seconds ahead (or sooner, if its target is nearer).</summary>
         public static string Stop()
         {
@@ -82,7 +113,7 @@ namespace Server.Pimp
                 var u = c.UniverseTime(now, StartTicks);
                 var target = u + c.Rate * StopLeadS;
                 if (!double.IsNaN(c.Target) && c.Target < target) return "already landing at t=" + c.Target.ToString("F1", CultureInfo.InvariantCulture);
-                Set(new PimpWarpClock(c.SubspaceKey, now, c.OffsetAt(now, StartTicks), c.Rate, target), "stopping");
+                Set(new PimpWarpClock(c.SubspaceKey, now, c.OffsetAt(now, StartTicks), c.Rate, target, c.Physics, c.Limit, c.Proposer), "stopping");
                 return "stopping: " + _clock;
             }
         }

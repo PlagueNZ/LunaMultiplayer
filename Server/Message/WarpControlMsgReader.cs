@@ -28,6 +28,22 @@ namespace Server.Message
                     //We don't use this message anymore so we can recycle it
                     message.Recycle();
                     break;
+                // PiMP (W4.3): consensus warp votes.
+                case WarpMessageType.Propose:
+                    Pimp.PimpConsensusWarp.HandlePropose(client, (WarpProposeMsgData)messageData);
+                    break;
+                case WarpMessageType.Vote:
+                    Pimp.PimpConsensusWarp.HandleVote(client, (WarpVoteMsgData)messageData);
+                    break;
+                case WarpMessageType.Report:
+                    Pimp.PimpConsensusWarp.HandleReport(client, ((WarpReportMsgData)messageData).Report);
+                    break;
+                case WarpMessageType.RateRequest:
+                    Pimp.PimpConsensusWarp.HandleRateRequest(client, ((WarpRateRequestMsgData)messageData).Rate);
+                    break;
+                case WarpMessageType.StopRequest:
+                    Pimp.PimpConsensusWarp.HandleStopRequest(client);
+                    break;
                 default:
                     throw new NotImplementedException("Warp Type not implemented");
             }

@@ -39,6 +39,8 @@ namespace Server.Client
             {
                 client.ConnectionStatus = ConnectionStatus.Disconnected;
                 LmpPluginHandler.FireOnClientDisconnect(client);
+                // PiMP (W4.3): a proposal or group warp that depends on this player.
+                Pimp.PimpConsensusWarp.OnDisconnect(client);
                 if (client.Authenticated)
                 {
                     var msgData = ServerContext.ServerMessageFactory.CreateNewMessageData<PlayerConnectionLeaveMsgData>();

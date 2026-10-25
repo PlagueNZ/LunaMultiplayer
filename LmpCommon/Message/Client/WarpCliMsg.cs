@@ -21,7 +21,12 @@ namespace LmpCommon.Message.Client
         {
             [(ushort)WarpMessageType.SubspacesRequest] = typeof(WarpSubspacesRequestMsgData),
             [(ushort)WarpMessageType.NewSubspace] = typeof(WarpNewSubspaceMsgData),
-            [(ushort)WarpMessageType.ChangeSubspace] = typeof(WarpChangeSubspaceMsgData)
+            [(ushort)WarpMessageType.ChangeSubspace] = typeof(WarpChangeSubspaceMsgData),
+            [(ushort)WarpMessageType.Propose] = typeof(WarpProposeMsgData),
+            [(ushort)WarpMessageType.Vote] = typeof(WarpVoteMsgData),
+            [(ushort)WarpMessageType.Report] = typeof(WarpReportMsgData),
+            [(ushort)WarpMessageType.StopRequest] = typeof(WarpStopRequestMsgData),
+            [(ushort)WarpMessageType.RateRequest] = typeof(WarpRateRequestMsgData)
         };
 
         public override ClientMessageType MessageType => ClientMessageType.Warp;

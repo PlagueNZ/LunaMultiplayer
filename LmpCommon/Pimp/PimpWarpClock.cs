@@ -22,8 +22,15 @@ namespace LmpCommon.Pimp
         public readonly double Rate;
         /// <summary>Universe time the warp lands on; NaN for an open warp (until stopped).</summary>
         public readonly double Target;
+        /// <summary>W4.3: physics warp (KSP's low warp mode) rather than on-rails warp.</summary>
+        public readonly bool Physics;
+        /// <summary>W4.3 (Jacob, 26 Oct): the fastest rate every game can use now (and the server's cap); NaN at rest.</summary>
+        public readonly double Limit;
+        /// <summary>W4.3: the player who asked for this warp; only they change its rate or stop it. Empty at rest.</summary>
+        public readonly string Proposer;
 
-        public PimpWarpClock(int subspaceKey, long t0Ticks, double offset0, double rate, double target)
+        public PimpWarpClock(int subspaceKey, long t0Ticks, double offset0, double rate, double target, bool physics = false,
+                             double limit = double.NaN, string proposer = "")
         {
             if (!(rate >= 1)) throw new ArgumentOutOfRangeException(nameof(rate), rate, "rate must be at least 1");
             SubspaceKey = subspaceKey;
@@ -31,6 +38,9 @@ namespace LmpCommon.Pimp
             Offset0 = offset0;
             Rate = rate;
             Target = target;
+            Physics = physics;
+            Limit = limit;
+            Proposer = proposer ?? "";
         }
 
         /// <summary>A clock at rest (rate 1, no target): the subspace's offset is fixed.</summary>
@@ -64,7 +74,8 @@ namespace LmpCommon.Pimp
         public bool HasLanded(long nowTicks, long startTicks) => Seconds(nowTicks - T0Ticks) >= LandsAfterS(startTicks);
 
         public override string ToString() =>
-            $"subspace {SubspaceKey}, rate {Rate:G6}x from offset {Offset0:F3} s, " +
-            (double.IsNaN(Target) ? "open" : $"landing at t={Target:F1}");
+            $"subspace {SubspaceKey}, {(Physics ? "physics " : "")}rate {Rate:G6}x from offset {Offset0:F3} s, " +
+            (double.IsNaN(Target) ? "open" : $"landing at t={Target:F1}") +
+            (double.IsNaN(Limit) ? "" : $", limit {Limit:G6}x") + (Proposer.Length == 0 ? "" : $", asked by {Proposer}");
     }
 }

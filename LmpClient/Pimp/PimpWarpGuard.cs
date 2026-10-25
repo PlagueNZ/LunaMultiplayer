@@ -40,11 +40,14 @@ namespace LmpClient.Pimp
 
         internal static bool AllowRate(int rateIndex)
         {
-            if (rateIndex <= 0 || !Active || PimpConsensusFollower.Driving) return true;
+            if (!Active || PimpConsensusFollower.Driving) return true;
+            // W4.3 (Jacob, 26 Oct): under Consensus the warp keys and the time gauge's buttons open the
+            // request window, or, during a group warp, change its rate or stop it (the proposer only).
+            if (SettingsSystem.ServerSettings.WarpMode == WarpMode.Consensus) return PimpConsensusUi.OnPlayerRate(rateIndex);
+            if (rateIndex <= 0) return true;
             if (Time.realtimeSinceStartup >= _nextMessage)
             {
-                ScreenMessages.PostScreenMessage(SettingsSystem.ServerSettings.WarpMode == WarpMode.Consensus
-                    ? "Time warp on this server is a group warp" : "Time warp is disabled on this server", 2f, ScreenMessageStyle.UPPER_CENTER);
+                ScreenMessages.PostScreenMessage("Time warp is disabled on this server", 2f, ScreenMessageStyle.UPPER_CENTER);
                 _nextMessage = Time.realtimeSinceStartup + 2f;
             }
             return false;

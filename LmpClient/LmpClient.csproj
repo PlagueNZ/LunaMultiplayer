@@ -156,6 +156,9 @@
     <Compile Include="Pimp\PimpWarpGuard.cs" />
     <Compile Include="Pimp\PimpEndOfWarpStates.cs" />
     <Compile Include="Pimp\PimpConsensusFollower.cs" />
+    <Compile Include="Pimp\PimpConsensusUi.cs" />
+    <Compile Include="Pimp\PimpWarpReporter.cs" />
+    <Compile Include="Pimp\TimeWarp_WarpTo.cs" />
     <Compile Include="Extensions\AssemblyExtension.cs" />
     <Compile Include="Extensions\CelestialBodyExtension.cs" />
     <Compile Include="Extensions\ConfigNodeExtension.cs" />

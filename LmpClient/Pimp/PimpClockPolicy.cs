@@ -1,4 +1,4 @@
-using LmpClient.Systems.TimeSync;
+﻿using LmpClient.Systems.TimeSync;
 using LmpClient.Systems.Warp;
 using LmpCommon.Enums;
 using System;
@@ -149,6 +149,13 @@ namespace LmpClient.Pimp
         {
             try
             {
+                // W4.3: a group warp is landing; the follower brings this game to its target, never past it.
+                if (PimpConsensusFollower.Landing)
+                {
+                    Time.timeScale = 1f;
+                    EndHold(null);
+                    return false;
+                }
                 if (!LmpWouldSync) { EndHold(null); return true; }
 
                 var errorS = TimeSyncSystem.CurrentErrorSec;   // < 0: behind the server

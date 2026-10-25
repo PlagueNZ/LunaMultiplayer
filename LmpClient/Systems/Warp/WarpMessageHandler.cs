@@ -79,6 +79,22 @@ namespace LmpClient.Systems.Warp
                         });
                     }
                     break;
+                case WarpMessageType.Ask:
+                    {
+                        // PiMP (W4.3): the popup; copy now, the message is recycled when this returns.
+                        var d = (WarpAskMsgData)msgData;
+                        int id = d.ProposalId; string who = d.Proposer; var mode = d.Mode; double target = d.TargetUt; bool physics = d.Physics;
+                        double rate = d.RequestedRate, timeout = d.TimeoutS, alarm = d.AlarmUt; string alarmName = d.AlarmName;
+                        Pimp.PimpConsensusUi.Post(() => Pimp.PimpConsensusUi.Instance?.OnAsk(id, who, mode, target, physics, rate, timeout, alarm, alarmName));
+                    }
+                    break;
+                case WarpMessageType.Result:
+                    {
+                        var d = (WarpResultMsgData)msgData;
+                        int id = d.ProposalId; bool started = d.Started; string text = d.Text;
+                        Pimp.PimpConsensusUi.Post(() => Pimp.PimpConsensusUi.Instance?.OnResult(id, started, text));
+                    }
+                    break;
                 case WarpMessageType.Clock:
                     {
                         // PiMP (W4.1): the consensus warp clock. Stored and logged; games follow it from W4.2.

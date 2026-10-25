@@ -38,6 +38,11 @@ namespace LmpClient.Pimp
         internal static bool Driving;
 
         private static bool _landing;
+
+        /// <summary>W4.3: landing on a group warp's target. LMP's clock sync stands aside meanwhile
+        /// (PimpClockPolicy): a forward jump in the same frame as a high warp step carried the game 200 s
+        /// past the target at 100,000x (26 Oct).</summary>
+        internal static bool Landing => _landing && Active;
         private bool _following;
         private float _nextLog;
         private PimpWarpClock _clock;
@@ -106,13 +111,16 @@ namespace LmpClient.Pimp
                 }
                 Driving = true;
                 var remaining = c.Target - ut;
-                var landIdx = remaining <= LandStopS ? 0 : LandingIndex(c.Rate, remaining);
+                EnsureMode(c.Physics);
+                var landIdx = remaining <= LandStopS ? 0 : LandingIndex(c.Rate, remaining, c.Physics);
                 if (TimeWarp.CurrentRateIndex != landIdx) SetRate(landIdx, true);
                 return;
             }
 
-            var idx = RailsIndexFor(c.Rate);
+            EnsureMode(c.Physics);
+            var idx = RailsIndexFor(c.Rate, c.Physics);
             if (TimeWarp.CurrentRateIndex != idx) SetRate(idx);
+            Report(c.Physics);
 
             if (Time.realtimeSinceStartup >= _nextLog)
             {
@@ -124,11 +132,11 @@ namespace LmpClient.Pimp
 
         // While landing: the highest index at or below the clock's rate that covers at most half the
         // remaining game time in two frames.
-        private static int LandingIndex(double rate, double remaining)
+        private static int LandingIndex(double rate, double remaining, bool physics)
         {
-            var rates = TimeWarp.fetch.warpRates;
+            var rates = physics ? TimeWarp.fetch.physicsWarpRates : TimeWarp.fetch.warpRates;
             var frame = Math.Max(Time.unscaledDeltaTime, 0.02f);
-            var cap = RailsIndexFor(rate);
+            var cap = RailsIndexFor(rate, physics);
             var idx = 0;
             for (var i = 1; i <= cap && i < rates.Length; i++) if (rates[i] * frame * 2 <= remaining * 0.5) idx = i;
             return idx;
@@ -139,10 +147,14 @@ namespace LmpClient.Pimp
         {
             if (Time.realtimeSinceStartup < _nextBanner) return;
             _nextBanner = Time.realtimeSinceStartup + 0.5f;
+            var mine = c.Proposer == SettingsSystem.CurrentSettings.PlayerName;
             var text = "Group warp " + c.Rate.ToString("N0", CultureInfo.InvariantCulture) + "x" +
+                       (double.IsNaN(c.Limit) ? "" : " (max " + c.Limit.ToString("N0", CultureInfo.InvariantCulture) + "x)") +
                        (double.IsNaN(c.Target)
                            ? " until stopped"
-                           : " to " + KSPUtil.PrintDateCompact(c.Target, true, true) + " (" + Math.Max(0, (c.Target - ut) / c.Rate).ToString("F0", CultureInfo.InvariantCulture) + " s)");
+                           : " to " + KSPUtil.PrintDateCompact(c.Target, true, true) + " (" + Math.Max(0, (c.Target - ut) / c.Rate).ToString("F0", CultureInfo.InvariantCulture) + " s)") +
+                       (mine ? " · your warp keys change it, " + GameSettings.TIME_WARP_STOP.primary + " stops it"
+                             : c.Proposer.Length > 0 ? " · asked by " + c.Proposer : "");
             if (_banner != null) ScreenMessages.RemoveMessage(_banner);
             _banner = ScreenMessages.PostScreenMessage(text, 1.2f, ScreenMessageStyle.UPPER_CENTER);
         }
@@ -155,15 +167,42 @@ namespace LmpClient.Pimp
         }
 
         // The highest on-rails index whose rate is at most the clock's, capped by KSP's limits here.
-        private static int RailsIndexFor(double rate)
+        private static int RailsIndexFor(double rate, bool physics = false)
         {
-            var rates = TimeWarp.fetch.warpRates;
+            var rates = physics ? TimeWarp.fetch.physicsWarpRates : TimeWarp.fetch.warpRates;
             var idx = 0;
             for (var i = 1; i < rates.Length; i++) if (rates[i] <= rate * 1.0001) idx = i;
+            if (physics) return idx;   // physics warp has no altitude limits
             // In flight, KSP's altitude limits for the active vessel (KSP also refuses a rate it does not allow).
             var v = HighLogic.LoadedSceneIsFlight ? FlightGlobals.ActiveVessel : null;
             var max = v != null && v.mainBody != null ? TimeWarp.fetch.GetMaxRateForAltitude(v.altitude, v.mainBody) : rates.Length - 1;
             return Math.Max(0, Math.Min(idx, max));
+        }
+
+        // W4.3: physics warp is KSP's low mode (TimeWarp.setMode is private).
+        private static System.Reflection.MethodInfo _setMode;
+        private static void EnsureMode(bool physics)
+        {
+            var want = physics ? TimeWarp.Modes.LOW : TimeWarp.Modes.HIGH;
+            if (TimeWarp.fetch.Mode == want) return;
+            if (_setMode == null) _setMode = HarmonyLib.AccessTools.Method(typeof(TimeWarp), "setMode");
+            if (TimeWarp.CurrentRateIndex > 0) SetRate(0, true);
+            Driving = true;
+            try { _setMode?.Invoke(TimeWarp.fetch, new object[] { want }); }
+            finally { Driving = _landing; }
+            LunaLog.Log(LogPrefix + "Consensus warp: KSP warp mode " + want + ".");
+        }
+
+        // W4.3: every 2 s during a group warp, this game's rate limit and next alarm, so the server can
+        // lower the rate or move the target to an alarm.
+        private float _nextReport;
+        private void Report(bool physics)
+        {
+            if (Time.realtimeSinceStartup < _nextReport) return;
+            _nextReport = Time.realtimeSinceStartup + 2f;
+            var msg = Network.NetworkMain.CliMsgFactory.CreateNewMessageData<LmpCommon.Message.Data.Warp.WarpReportMsgData>();
+            msg.Report.CopyFrom(PimpWarpReporter.Local(physics));
+            WarpSystem.Singleton.MessageSender.SendMessage(msg);
         }
 
         private static void SetRate(int idx, bool instant = false)
