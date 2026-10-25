@@ -65,6 +65,9 @@ namespace LmpClient.Systems.Warp
         public bool WaitingSubspaceIdFromServer { get; set; }
         public bool SyncedToLastSubspace { get; set; }
 
+        /// <summary>PiMP (W4.1): the server's consensus warp clock, if any (WarpMode.Consensus).</summary>
+        public volatile LmpCommon.Pimp.PimpWarpClock PimpWarpClock;
+
         public List<SubspaceDisplayEntry> SubspaceEntries { get; set; } = new List<SubspaceDisplayEntry>();
 
         #endregion
@@ -93,6 +96,7 @@ namespace LmpClient.Systems.Warp
         {
             base.OnDisabled();
             while (_pimpEvents.TryDequeue(out _)) { }
+            PimpWarpClock = null;
             GameEvents.onTimeWarpRateChanged.Remove(WarpEvents.OnTimeWarpChanged);
             GameEvents.onLevelWasLoadedGUIReady.Remove(WarpEvents.OnSceneChanged);
             ClientSubspaceList.Clear();

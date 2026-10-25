@@ -22,7 +22,8 @@ namespace LmpCommon.Message.Server
             [(ushort)WarpMessageType.SubspacesReply] = typeof(WarpSubspacesReplyMsgData),
             [(ushort)WarpMessageType.NewSubspace] = typeof(WarpNewSubspaceMsgData),
             [(ushort)WarpMessageType.ChangeSubspace] = typeof(WarpChangeSubspaceMsgData),
-            [(ushort)WarpMessageType.AuthoritativeStates] = typeof(WarpAuthoritativeStatesMsgData)
+            [(ushort)WarpMessageType.AuthoritativeStates] = typeof(WarpAuthoritativeStatesMsgData),
+            [(ushort)WarpMessageType.Clock] = typeof(WarpClockMsgData)
         };
 
         public override ServerMessageType MessageType => ServerMessageType.Warp;

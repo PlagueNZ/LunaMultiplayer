@@ -17,6 +17,13 @@ namespace Server.System
             lock (CreateSubspaceLock)
             {
                 if (message.PlayerCreator != client.PlayerName) return;
+                // PiMP (W4.1): in WarpMode.Consensus nobody makes a subspace of their own; warps go
+                // through the shared warp clock (Server.Pimp.PimpConsensusWarp).
+                if (Pimp.PimpConsensusWarp.Enabled)
+                {
+                    LunaLog.Warning($"[PiMP] {client.PlayerName} tried to create a subspace under WarpMode Consensus; refused");
+                    return;
+                }
 
                 LunaLog.Debug($"{client.PlayerName} created the new subspace '{WarpContext.NextSubspaceId}'");
 

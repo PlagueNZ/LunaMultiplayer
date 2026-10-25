@@ -49,7 +49,13 @@ namespace Server.Context
         {
             get
             {
-                try { return Subspaces.IsEmpty ? 0 : LatestSubspace.Time; }
+                try
+                {
+                    if (Subspaces.IsEmpty) return 0;
+                    var latest = LatestSubspace;
+                    // PiMP (W4.1): in WarpMode.Consensus a running warp moves the latest subspace's offset.
+                    return Pimp.PimpConsensusWarp.TryOffset(latest, out var moving) ? moving : latest.Time;
+                }
                 catch (global::System.InvalidOperationException) { return 0; }
             }
         }

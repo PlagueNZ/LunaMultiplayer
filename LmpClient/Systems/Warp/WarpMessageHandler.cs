@@ -79,6 +79,14 @@ namespace LmpClient.Systems.Warp
                         });
                     }
                     break;
+                case WarpMessageType.Clock:
+                    {
+                        // PiMP (W4.1): the consensus warp clock. Stored and logged; games follow it from W4.2.
+                        var clock = ((WarpClockMsgData)msgData).ToClock();
+                        System.PimpWarpClock = clock;
+                        LunaLog.Log($"[LMP][PiMP] Warp clock: {clock}");
+                    }
+                    break;
                 default:
                     {
                         LunaLog.LogError($"[LMP]: Unhandled WARP_MESSAGE type: {msgData.WarpMessageType}");

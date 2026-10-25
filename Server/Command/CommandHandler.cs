@@ -36,6 +36,7 @@ namespace Server.Command
             RegisterCommand("say", new SayCommand().Execute, "Broadcasts a message to clients");
             RegisterCommand("vessel", new VesselCommand().Execute, "Vessel related commands. Usage: /vessel info [name/guid]");
             RegisterCommand("backup", new BackupCommand().Execute, "Backup related commands. Usage: /backup [now]");
+            RegisterCommand("warpclock", new WarpClockCommand().Execute, "PiMP consensus warp clock (WarpMode Consensus). Usage: /warpclock start <rate> [seconds of game time] | stop | status");
         }
 
         /// <summary>

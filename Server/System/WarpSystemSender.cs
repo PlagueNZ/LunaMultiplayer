@@ -37,6 +37,8 @@ namespace Server.System
             msgData.SubspaceCount = subspaces.Length;
 
             MessageQueuer.SendToClient<WarpSrvMsg>(client, msgData);
+            // PiMP (W4.1): in WarpMode.Consensus the subspace list is followed by the warp clock.
+            Pimp.PimpConsensusWarp.SendTo(client);
         }
     }
 }

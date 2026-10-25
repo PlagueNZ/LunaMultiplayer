@@ -7,6 +7,8 @@
         NewSubspace = 3,
         ChangeSubspace = 4,
         // PiMP (warp plan W3, 25 Oct 2026): server -> client only.
-        AuthoritativeStates = 5
+        AuthoritativeStates = 5,
+        // PiMP (consensus warp, plan W4.1, 25 Oct 2026): server -> client only.
+        Clock = 6
     }
 }
