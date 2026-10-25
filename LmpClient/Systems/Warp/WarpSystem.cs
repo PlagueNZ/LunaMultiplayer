@@ -271,7 +271,12 @@ namespace LmpClient.Systems.Warp
         {
             if (!Subspaces.ContainsKey(subspace)) return 0d;
 
-            var result = TimeSyncSystem.ServerClockSec + Subspaces[subspace];
+            // PiMP (W4.2): a subspace the consensus warp clock drives moves at the clock's rate.
+            var clock = PimpWarpClock;
+            var offset = clock != null && clock.SubspaceKey == subspace
+                ? clock.OffsetAt(LmpCommon.Time.LunaNetworkTime.UtcNow.Ticks, TimeSyncSystem.ServerStartTime)
+                : Subspaces[subspace];
+            var result = TimeSyncSystem.ServerClockSec + offset;
             if (double.IsNaN(result) || double.IsInfinity(result) || result < 0)
             {
                 LunaLog.LogWarning($"[LMP]: GetSubspaceTime({subspace}) produced invalid result {result} " +

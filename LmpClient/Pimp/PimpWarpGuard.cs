@@ -1,4 +1,4 @@
-using HarmonyLib;
+﻿using HarmonyLib;
 using LmpClient.Systems.SettingsSys;
 using LmpClient.Systems.Warp;
 using LmpCommon.Enums;
@@ -30,18 +30,21 @@ namespace LmpClient.Pimp
         private const string LogPrefix = "[LMP][PiMP] ";
         private static float _nextMessage;
 
+        // W4.2: also under WarpMode.Consensus, where only the group warp drives KSP's warp
+        // (PimpConsensusFollower.Driving).
         internal static bool Active =>
             MainSystem.NetworkState >= ClientState.Connected &&
-            SettingsSystem.ServerSettings.WarpMode == WarpMode.None;
+            (SettingsSystem.ServerSettings.WarpMode == WarpMode.None || SettingsSystem.ServerSettings.WarpMode == WarpMode.Consensus);
 
         public void Awake() => DontDestroyOnLoad(this);
 
         internal static bool AllowRate(int rateIndex)
         {
-            if (rateIndex <= 0 || !Active) return true;
+            if (rateIndex <= 0 || !Active || PimpConsensusFollower.Driving) return true;
             if (Time.realtimeSinceStartup >= _nextMessage)
             {
-                ScreenMessages.PostScreenMessage("Time warp is disabled on this server", 2f, ScreenMessageStyle.UPPER_CENTER);
+                ScreenMessages.PostScreenMessage(SettingsSystem.ServerSettings.WarpMode == WarpMode.Consensus
+                    ? "Time warp on this server is a group warp" : "Time warp is disabled on this server", 2f, ScreenMessageStyle.UPPER_CENTER);
                 _nextMessage = Time.realtimeSinceStartup + 2f;
             }
             return false;

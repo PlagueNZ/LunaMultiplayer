@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -110,6 +110,27 @@ namespace Server.Plugin
 
         //Fire OnUpdate
         // PiMP (W1): the optional warp callbacks, only for plugins that implement IPimpWarpPlugin.
+        /// <summary>PiMP (W4.2): a consensus warp's clock landed; tells IPimpConsensusWarpPlugin plugins.</summary>
+        public static void FireOnConsensusWarpLanded(int subspaceId, double universeTime)
+        {
+            lock (ListLock)
+            {
+                foreach (var plugin in LoadedPlugins.OfType<IPimpConsensusWarpPlugin>())
+                {
+                    try
+                    {
+                        plugin.OnConsensusWarpLanded(subspaceId, universeTime);
+                    }
+                    catch (Exception e)
+                    {
+                        var type = plugin.GetType();
+                        LunaLog.Debug($"Error thrown in OnConsensusWarpLanded event for {type.FullName} " +
+                                      $"({type.Assembly.FullName}), Exception: {e}");
+                    }
+                }
+            }
+        }
+
         public static void FireOnSubspaceCreated(ClientStructure creator, int subspaceId, double serverTimeDifference)
         {
             lock (ListLock)

@@ -1,4 +1,4 @@
-using LmpCommon.Enums;
+﻿using LmpCommon.Enums;
 using LmpCommon.Message.Data.Warp;
 using LmpCommon.Message.Server;
 using LmpCommon.Pimp;
@@ -130,6 +130,8 @@ namespace Server.Pimp
                 if (WarpContext.Subspaces.TryGetValue(c.SubspaceKey, out var sub)) sub.Time = offset;
                 StopTimer();
                 Set(PimpWarpClock.AtRest(c.SubspaceKey, now, offset), "landed at t=" + c.Target.ToString("F1", CultureInfo.InvariantCulture));
+                // W4.2: plugins that simulate (the bridge) send their end-of-warp states to everyone.
+                Plugin.LmpPluginHandler.FireOnConsensusWarpLanded(c.SubspaceKey, c.Target);
             }
         }
 

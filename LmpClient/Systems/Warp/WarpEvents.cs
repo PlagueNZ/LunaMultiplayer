@@ -13,6 +13,9 @@ namespace LmpClient.Systems.Warp
         /// </summary>
         public void OnTimeWarpChanged()
         {
+            // PiMP (W4.2): under WarpMode.Consensus a warp keeps this game in its subspace (the shared
+            // warp clock moves it); it never goes to -1. Only the group warp drives the rate.
+            if (SettingsSystem.ServerSettings.WarpMode == WarpMode.Consensus) return;
             if (TimeWarp.CurrentRateIndex > 0)
             {
                 if (!System.WarpValidation() || VesselCommon.IsSpectating)

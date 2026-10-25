@@ -37,7 +37,10 @@ namespace LmpClient.Systems.Warp
                 System.ClientSubspaceList.TryAdd(SettingsSystem.CurrentSettings.PlayerName, 0);
 
             var playerCount = System.ClientSubspaceList.Keys.Count;
-            if (System.SubspaceEntries.Count != 1 || playerCount != System.SubspaceEntries[0].Players.Count)
+            // PiMP (W4.2): under WarpMode.Consensus everyone is in the latest subspace, which need not be 0
+            // (26 Oct: the status window showed "----" for subspace 0 on a server whose only one is 10).
+            var subspaceId = SettingsSystem.ServerSettings.WarpMode == WarpMode.Consensus && System.CurrentSubspace >= 0 ? System.CurrentSubspace : 0;
+            if (System.SubspaceEntries.Count != 1 || playerCount != System.SubspaceEntries[0].Players.Count || System.SubspaceEntries[0].SubspaceId != subspaceId)
             {
                 System.SubspaceEntries.Clear();
 
@@ -47,7 +50,7 @@ namespace LmpClient.Systems.Warp
                 System.SubspaceEntries.Add(new SubspaceDisplayEntry
                 {
                     Players = allPlayers,
-                    SubspaceId = 0,
+                    SubspaceId = subspaceId,
                     SubspaceTime = 0
                 });
             }
