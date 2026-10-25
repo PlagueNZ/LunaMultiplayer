@@ -12,7 +12,7 @@ using UnityEngine;
 namespace LmpClient.Pimp
 {
     /// <summary>
-    /// PiMP consensus warp (plan W4.3, 26 Oct 2026): the request window, the vote popup and the results
+    /// PiMP consensus warp (plan W4.3, 25 Oct 2026): the request window, the vote popup and the results
     /// (mock-ups agreed with Jacob, 25 Oct; "the popup will change with design choices").
     ///   - Under WarpMode.Consensus the warp-up key (TIME_WARP_INCREASE) opens the request window:
     ///     until I stop / to a date / for a duration; rails or physics; a rate or the highest everyone
@@ -29,7 +29,7 @@ namespace LmpClient.Pimp
     {
         private const string LogPrefix = "[LMP][PiMP] ";
         private static readonly DateTime CalendarStart = new DateTime(1951, 1, 1, 0, 0, 0, DateTimeKind.Utc);   // UT 0 (PiMP's calendar)
-        // Jacob (26 Oct): a start rate; the proposer changes it during the warp with the warp keys or buttons.
+        // Jacob (25 Oct): a start rate; the proposer changes it during the warp with the warp keys or buttons.
         private static readonly double[] RateChoices = { 10, 100, 1000, 10000, 100000 };
         private static readonly ConcurrentQueue<Action> Pending = new ConcurrentQueue<Action>();
 
@@ -42,7 +42,7 @@ namespace LmpClient.Pimp
         private bool _physics;
         private int _rateChoice = 2;   // 1,000x
         private string _dateText = "", _hoursText = "6", _minutesText = "0";
-        // W4.3 (Jacob, 26 Oct): a KSP "warp to" (sunrise, apoapsis, periapsis, manoeuvre, alarm) fills the
+        // W4.3 (Jacob, 25 Oct): a KSP "warp to" (sunrise, apoapsis, periapsis, manoeuvre, alarm) fills the
         // window with its exact time; kept to the second while the date box still shows it.
         private double _exactTarget = double.NaN;
         private string _exactText = "", _source = "";
@@ -200,7 +200,7 @@ namespace LmpClient.Pimp
         }
 
         /// <summary>
-        /// W4.3 (Jacob, 26 Oct): KSP's TimeWarp.WarpTo under Consensus (TimeWarp_WarpTo): every "warp to"
+        /// W4.3 (Jacob, 25 Oct): KSP's TimeWarp.WarpTo under Consensus (TimeWarp_WarpTo): every "warp to"
         /// (the space centre's sunrise, the map's apoapsis/periapsis/manoeuvre/here, Principia's warp to
         /// manoeuvre, Kerbal Alarm Clock) opens the request window filled with that exact time instead of
         /// warping this game alone.

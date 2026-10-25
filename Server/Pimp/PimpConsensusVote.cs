@@ -14,7 +14,7 @@ using System.Threading;
 namespace Server.Pimp
 {
     /// <summary>
-    /// PiMP consensus warp (plan W4.3, 26 Oct 2026): propose and vote. Jacob's rules (25 Oct):
+    /// PiMP consensus warp (plan W4.3, 25 Oct 2026): propose and vote. Jacob's rules (25 Oct):
     ///   - a request is "until I stop", "to a time" or "for a duration", rails or physics;
     ///   - every other player gets the popup; only an explicit yes counts: a no, no answer within
     ///     ConsensusVoteTimeoutS, or a game that cannot take part (with its reason) means no warp;
@@ -153,7 +153,7 @@ namespace Server.Pimp
             }
         }
 
-        /// <summary>W4.3 (Jacob, 26 Oct): the proposer sets the rate while the warp runs, up to the group limit.</summary>
+        /// <summary>W4.3 (Jacob, 25 Oct): the proposer sets the rate while the warp runs, up to the group limit.</summary>
         public static void HandleRateRequest(ClientStructure client, double rate)
         {
             lock (Gate)
@@ -231,7 +231,7 @@ namespace Server.Pimp
             }
             if (p.Physics) limit = Math.Min(limit, MaxPhysicsRate);
             limit = Math.Min(limit, Cap);
-            // Jacob (26 Oct): the request picks a start rate; the proposer changes it during the warp, up to the limit.
+            // Jacob (25 Oct): the request picks a start rate; the proposer changes it during the warp, up to the limit.
             var rate = Math.Min(p.RequestedRate > 1 ? p.RequestedRate : DefaultStartRate, limit);
             if (!(rate > 1) || double.IsInfinity(rate)) { Fail(p, $"no warp rate everyone can use (limited by {limitedBy})."); return; }
             var alarm = EarliestAlarm(p.Yes, u, out var alarmName);

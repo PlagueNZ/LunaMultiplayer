@@ -11,7 +11,7 @@ using UnityEngine;
 namespace LmpClient.Pimp
 {
     /// <summary>
-    /// PiMP consensus warp (plan W4.2, 26 Oct 2026): this game follows the server's warp clock.
+    /// PiMP consensus warp (plan W4.2, 25 Oct 2026): this game follows the server's warp clock.
     /// Under WarpMode.Consensus everyone stays in one subspace and the server moves its time at the
     /// warp's rate (LmpCommon.Pimp.PimpWarpClock, W4.1). WarpSystem.GetSubspaceTime follows the clock,
     /// so LMP's own clock sync (with PiMP's clock policy) holds this game to it; this addon sets KSP's
@@ -41,7 +41,7 @@ namespace LmpClient.Pimp
 
         /// <summary>W4.3: landing on a group warp's target. LMP's clock sync stands aside meanwhile
         /// (PimpClockPolicy): a forward jump in the same frame as a high warp step carried the game 200 s
-        /// past the target at 100,000x (26 Oct).</summary>
+        /// past the target at 100,000x (25 Oct).</summary>
         internal static bool Landing => _landing && Active;
         private bool _following;
         private float _nextLog;
@@ -98,7 +98,7 @@ namespace LmpClient.Pimp
             Banner(c, ut);
 
             // Last few real seconds: land on the target ourselves. KSP's WarpTo is not exact at high
-            // rates (26 Oct, pimp.6 test: "Overshoot is 15.4s" at 1000x, 16.6 s past the target), and
+            // rates (25 Oct, pimp.6 test: "Overshoot is 15.4s" at 1000x, 16.6 s past the target), and
             // Principia cannot go back. Each frame: the highest rate that cannot reach the target
             // within two frames, changed instantly; 1x once inside half a second. The clock sync
             // closes what is left from behind.
@@ -142,7 +142,7 @@ namespace LmpClient.Pimp
             return idx;
         }
 
-        // Jacob (26 Oct): the group warp's text stays up for the whole warp.
+        // Jacob (25 Oct): the group warp's text stays up for the whole warp.
         private void Banner(PimpWarpClock c, double ut)
         {
             if (Time.realtimeSinceStartup < _nextBanner) return;

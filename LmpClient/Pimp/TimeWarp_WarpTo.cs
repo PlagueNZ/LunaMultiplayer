@@ -6,7 +6,7 @@ using System.Diagnostics;
 namespace LmpClient.Pimp
 {
     /// <summary>
-    /// PiMP consensus warp (plan W4.3, 26 Oct 2026): under WarpMode.Consensus KSP's own "warp to" (the space
+    /// PiMP consensus warp (plan W4.3, 25 Oct 2026): under WarpMode.Consensus KSP's own "warp to" (the space
     /// centre's sunrise button, the map's apoapsis, periapsis, manoeuvre and "warp here", Principia's warp to
     /// manoeuvre, Kerbal Alarm Clock's warp to alarm: all call TimeWarp.WarpTo) does not warp this game
     /// alone; it opens the group warp request filled in with that exact time (Jacob).

@@ -8,7 +8,7 @@ using System.Reflection;
 namespace LmpClient.Pimp
 {
     /// <summary>
-    /// PiMP consensus warp (plan W4.3, 26 Oct 2026): what this game reports with a warp request, a vote,
+    /// PiMP consensus warp (plan W4.3, 25 Oct 2026): what this game reports with a warp request, a vote,
     /// and every few seconds during a group warp: whether it can take part in the requested kind of warp
     /// (and why not, in KSP's own words), the highest rate it can use, and its next Kerbal Alarm Clock
     /// alarm (the earliest alarm any game reports stops the warp; Jacob, 25 Oct).

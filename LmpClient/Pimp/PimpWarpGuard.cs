@@ -41,7 +41,7 @@ namespace LmpClient.Pimp
         internal static bool AllowRate(int rateIndex)
         {
             if (!Active || PimpConsensusFollower.Driving) return true;
-            // W4.3 (Jacob, 26 Oct): under Consensus the warp keys and the time gauge's buttons open the
+            // W4.3 (Jacob, 25 Oct): under Consensus the warp keys and the time gauge's buttons open the
             // request window, or, during a group warp, change its rate or stop it (the proposer only).
             if (SettingsSystem.ServerSettings.WarpMode == WarpMode.Consensus) return PimpConsensusUi.OnPlayerRate(rateIndex);
             if (rateIndex <= 0) return true;
