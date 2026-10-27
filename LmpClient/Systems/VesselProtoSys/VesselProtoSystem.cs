@@ -31,6 +31,19 @@ namespace LmpClient.Systems.VesselProtoSys
 
         public readonly HashSet<Guid> VesselsUnableToLoad = new HashSet<Guid>();
 
+        //PiMP (27 Oct 2026, part-ownership guard plan G6): a vessel this game has never seen
+        //(typically another player's fresh debris) is held back while one of its part flightIDs
+        //still belongs to another vessel here. LMP sends the debris at once and the parent's
+        //updated proto 0.5 s later (VesselProtoEvents.PartDecoupled), and loading the debris
+        //first puts one part in two vessels: Principia aborts the game on that
+        //(plugin.cpp:1804, part_id_to_vessel_ CHECK). The hold lifts once the parent's update
+        //has removed the part, or after HoldNewVesselMaxS so nothing waits forever (the
+        //bridge client's part guard is the backstop). A newer proto for the same vessel
+        //replaces a held one.
+        private class HeldNewVessel { public ProtoVessel Proto; public bool ForceReload; public float Since; }
+        private static readonly Dictionary<Guid, HeldNewVessel> HeldNewVessels = new Dictionary<Guid, HeldNewVessel>();
+        private const float HoldNewVesselMaxS = 10f;
+
         public ConcurrentDictionary<Guid, VesselProtoQueue> VesselProtos { get; } = new ConcurrentDictionary<Guid, VesselProtoQueue>();
 
         //Tracks last broadcast drift count per vessel so identical drift states are not re-sent.
@@ -100,6 +113,7 @@ namespace LmpClient.Systems.VesselProtoSys
             //This is the main system that handles the vesselstore so if it's disabled clear the store too
             VesselProtos.Clear();
             VesselsUnableToLoad.Clear();
+            HeldNewVessels.Clear();
             QueuedVesselsToSend.Clear();
             ManeuverSignatures.Clear();
             LastBroadcastDriftPartCount.Clear();
@@ -227,6 +241,8 @@ namespace LmpClient.Systems.VesselProtoSys
                 var protoSwapEligible = IsProtoSwapEligibleScene(HighLogic.LoadedScene);
                 var expensiveReloadsRemaining = MaxExpensiveReloadsPerTick;
 
+                ReleaseHeldNewVessels(ref expensiveReloadsRemaining);
+
                 foreach (var keyVal in VesselProtos)
                 {
                     if (!keyVal.Value.TryPeek(out var vesselProto)) continue;
@@ -293,6 +309,17 @@ namespace LmpClient.Systems.VesselProtoSys
 
                     VesselsUnableToLoad.Remove(vesselId);
 
+                    //PiMP G6: hold a new vessel whose parts another vessel here still holds.
+                    if (existingVessel == null && FindPartClash(protoVessel, out var clashPart, out var clashOwner))
+                    {
+                        var replaced = HeldNewVessels.ContainsKey(vesselId);
+                        HeldNewVessels[vesselId] = new HeldNewVessel { Proto = protoVessel, ForceReload = forceReload, Since = UnityEngine.Time.realtimeSinceStartup };
+                        if (!replaced)
+                            LunaLog.Log($"[LMP]: [PiMP] Holding new vessel {vesselId} ({SafeName(protoVessel)}): part {clashPart} still belongs to {clashOwner}; loading it once that vessel's update arrives (at most {HoldNewVesselMaxS:0} s)");
+                        continue;
+                    }
+                    HeldNewVessels.Remove(vesselId);
+
                     if (willUseProtoSwap)
                     {
                         //SPACECENTER / EDITOR fast path: pointer-swap protoVessel without
@@ -321,6 +348,17 @@ namespace LmpClient.Systems.VesselProtoSys
                     //expensive.
                     expensiveReloadsRemaining--;
 
+                    LoadAndReport(protoVessel, forceReload, vesselId);
+                }
+            }
+            catch (Exception e)
+            {
+                LunaLog.LogError($"[LMP]: Error in CheckVesselsToLoad {e}");
+            }
+        }
+
+        private static void LoadAndReport(ProtoVessel protoVessel, bool forceReload, Guid vesselId)
+        {
                     var outcome = VesselLoader.LoadVessel(protoVessel, forceReload);
                     VesselSyncDiagnostics.LogLoadOutcome(vesselId, SafeName(protoVessel),
                         SafePartCount(protoVessel), SafeSituation(protoVessel), outcome);
@@ -345,12 +383,52 @@ namespace LmpClient.Systems.VesselProtoSys
                         case VesselLoadOutcome.Failed:
                             break;
                     }
+        }
+
+        //PiMP G6: release held new vessels whose part clash has gone, or that waited long enough.
+        private void ReleaseHeldNewVessels(ref int expensiveReloadsRemaining)
+        {
+            if (HeldNewVessels.Count == 0) return;
+            foreach (var id in new List<Guid>(HeldNewVessels.Keys))
+            {
+                var held = HeldNewVessels[id];
+                if (VesselProtos.TryGetValue(id, out var queue) && !queue.IsEmpty) { HeldNewVessels.Remove(id); continue; }   //a newer proto replaces it
+                if (FlightGlobals.FindVessel(id) != null) { HeldNewVessels.Remove(id); continue; }
+                var waited = UnityEngine.Time.realtimeSinceStartup - held.Since;
+                var clash = FindPartClash(held.Proto, out var part, out var owner);
+                if (clash && waited < HoldNewVesselMaxS) continue;
+                if (expensiveReloadsRemaining <= 0) return;
+                expensiveReloadsRemaining--;
+                HeldNewVessels.Remove(id);
+                LunaLog.Log(clash
+                    ? $"[LMP]: [PiMP] Loading held vessel {id} after {waited:0.0} s although part {part} still belongs to {owner} (no update arrived)"
+                    : $"[LMP]: [PiMP] Loading held vessel {id} after {waited:0.0} s: its parts are free now");
+                LoadAndReport(held.Proto, held.ForceReload, id);
+            }
+        }
+
+        //PiMP G6: does another vessel in this game still hold one of this proto's part flightIDs?
+        private static bool FindPartClash(ProtoVessel proto, out uint part, out Guid owner)
+        {
+            part = 0; owner = Guid.Empty;
+            if (proto?.protoPartSnapshots == null || FlightGlobals.Vessels == null) return false;
+            var ids = new HashSet<uint>();
+            foreach (var pps in proto.protoPartSnapshots) if (pps != null) ids.Add(pps.flightID);
+            foreach (var v in FlightGlobals.Vessels)
+            {
+                if (v == null || v.id == proto.vesselID) continue;
+                if (v.loaded && v.parts != null)
+                {
+                    foreach (var p in v.parts)
+                        if (p != null && ids.Contains(p.flightID)) { part = p.flightID; owner = v.id; return true; }
+                }
+                else if (v.protoVessel?.protoPartSnapshots != null)
+                {
+                    foreach (var pps in v.protoVessel.protoPartSnapshots)
+                        if (pps != null && ids.Contains(pps.flightID)) { part = pps.flightID; owner = v.id; return true; }
                 }
             }
-            catch (Exception e)
-            {
-                LunaLog.LogError($"[LMP]: Error in CheckVesselsToLoad {e}");
-            }
+            return false;
         }
 
         #endregion
