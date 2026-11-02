@@ -13,9 +13,9 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 [assembly: Guid("cc8e38bb-d6d5-4bb9-ab74-a3a1a11ddc8d")]
 
-[assembly: AssemblyVersion("0.31.0.11")]
-[assembly: AssemblyFileVersion("0.31.0.11")]
-[assembly: AssemblyInformationalVersion("0.31.0-pimp.11")]
+[assembly: AssemblyVersion("0.31.0.12")]
+[assembly: AssemblyFileVersion("0.31.0.12")]
+[assembly: AssemblyInformationalVersion("0.31.0-pimp.12")]
 
 // Type forwarders that keep older mods binding LmpCommon types via LmpClient live in
 // TypeForwarding.cs (single source to avoid duplicate CS0739 forwarder declarations).

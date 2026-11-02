@@ -208,7 +208,12 @@ namespace LmpClient.Systems.Scenario
 
         public void LoadScenarioDataIntoGame()
         {
-            while (ScenarioQueue.TryDequeue(out var scenarioEntry))
+            // PiMP (2 Nov 2026): KSP's own scenarios before the mods' (Pimp/PimpScenarioOrder.cs).
+            var received = new List<ScenarioEntry>();
+            while (ScenarioQueue.TryDequeue(out var queued))
+                received.Add(queued);
+
+            foreach (var scenarioEntry in Pimp.PimpScenarioOrder.StockFirst(received, n => AllScenarioTypesInAssemblies.TryGetValue(n, out var t) ? t : null))
             {
                 if (scenarioEntry == null)
                 {
