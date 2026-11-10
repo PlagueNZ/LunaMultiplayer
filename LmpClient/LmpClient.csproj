@@ -157,6 +157,7 @@
     <Compile Include="Pimp\PimpEndOfWarpStates.cs" />
     <Compile Include="Pimp\PimpConsensusFollower.cs" />
     <Compile Include="Pimp\PimpScenarioOrder.cs" />
+    <Compile Include="Pimp\PimpPartCatalog.cs" />
     <Compile Include="Pimp\PimpConsensusUi.cs" />
     <Compile Include="Pimp\PimpWarpReporter.cs" />
     <Compile Include="Pimp\TimeWarp_WarpTo.cs" />

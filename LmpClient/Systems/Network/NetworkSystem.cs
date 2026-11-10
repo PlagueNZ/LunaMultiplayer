@@ -210,6 +210,7 @@ namespace LmpClient.Systems.Network
                     MainSystem.Singleton.Status = "Running";
                     CommonUtil.Reserve20Mb();
                     LunaLog.Log("[LMP]: All systems up and running. Поехали!");
+                    Pimp.PimpPartCatalog.Send();   // PiMP (10 Nov 2026): this game's part titles, once per join
                     if (HighLogic.LoadedScene == GameScenes.SPACECENTER)
                     {
                         MainSystem.NetworkState = ClientState.Running;

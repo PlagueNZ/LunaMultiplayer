@@ -128,6 +128,7 @@ namespace Server
                 var scenariosCreated = ScenarioSystem.GenerateDefaultScenarios();
                 ScenarioStoreSystem.LoadExistingScenarios(scenariosCreated);
                 LmpPluginHandler.LoadPlugins();
+                Pimp.PimpPartCatalog.Register();   // PiMP (10 Nov 2026): part titles from the games, for the dashboards
                 WarpSystem.Reset();
                 TimeSystem.Reset();
 
