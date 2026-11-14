@@ -595,8 +595,8 @@ namespace LmpClient
 
             //Flightstate is null on new Game();
             returnGame.flightState = new FlightState();
-            if (returnGame.flightState.mapViewFilterState == 0)
-                returnGame.flightState.mapViewFilterState = -1026;
+            // PiMP (14 Nov 2026): the player's own map filters, kept across joins (PimpMapFilters).
+            returnGame.flightState.mapViewFilterState = Pimp.PimpMapFilters.StartState;
 
             returnGame.startScene = GameScenes.SPACECENTER;
 

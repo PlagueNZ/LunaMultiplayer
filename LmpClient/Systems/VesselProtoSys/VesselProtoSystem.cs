@@ -86,6 +86,7 @@ namespace LmpClient.Systems.VesselProtoSys
             WarpEvent.onTimeWarpStopped.Add(VesselProtoEvents.WarpStopped);
             GameEvents.onManeuverAdded.Add(VesselProtoEvents.ManeuverNodeAdded);
             GameEvents.onManeuverRemoved.Add(VesselProtoEvents.ManeuverNodeRemoved);
+            Pimp.PimpMapFilters.Register();   // PiMP (14 Nov 2026): remember the map's filters
             
             SetupRoutine(new RoutineDefinition(0, RoutineExecution.Update, CheckVesselsToLoad));
             SetupRoutine(new RoutineDefinition(2500, RoutineExecution.Update, SendVesselDefinition));
@@ -109,6 +110,7 @@ namespace LmpClient.Systems.VesselProtoSys
             WarpEvent.onTimeWarpStopped.Remove(VesselProtoEvents.WarpStopped);
             GameEvents.onManeuverAdded.Remove(VesselProtoEvents.ManeuverNodeAdded);
             GameEvents.onManeuverRemoved.Remove(VesselProtoEvents.ManeuverNodeRemoved);
+            Pimp.PimpMapFilters.Unregister();
 
             //This is the main system that handles the vesselstore so if it's disabled clear the store too
             VesselProtos.Clear();

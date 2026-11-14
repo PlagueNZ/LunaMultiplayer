@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -50,6 +51,18 @@ namespace LmpClient.VesselUtilities
             if (node?.fsm == null) return false;
             var state = node.fsm.currentStateName;
             return !string.IsNullOrEmpty(state) && RecoverableTransientStates.Contains(state);
+        }
+
+        /// <summary>
+        /// PiMP (14 Nov 2026): true when the port is PreAttached and its docking face really has a
+        /// part on it (any part, not only another docking port).
+        /// </summary>
+        public static bool IsPreAttachedToAPart(ModuleDockingNode node)
+        {
+            if (node?.fsm == null || node.part == null) return false;
+            if (node.fsm.currentStateName != "PreAttached") return false;
+            if (string.IsNullOrEmpty(node.referenceAttachNode)) return false;
+            return node.part.FindAttachNode(node.referenceAttachNode)?.attachedPart != null;
         }
 
         /// <summary>
@@ -307,6 +320,16 @@ namespace LmpClient.VesselUtilities
                     return true;
             }
 
+            // PiMP (14 Nov 2026): with no partner port there is nothing to undock from, and forcing a
+            // docked state (below) made KSP's own state handler throw on every click and every frame
+            // after. Refuse instead.
+            if (partner == null && node.otherNode == null)
+            {
+                failureReason =
+                    $"no docked partner port in {context}: fsm='{node.fsm.currentStateName}', dockedPartUId={node.dockedPartUId}";
+                return false;
+            }
+
             var inferredState = InferDockedStateForUndock(node);
             if (TryRecoverToDockedState(node, inferredState))
                 return true;
@@ -341,7 +364,25 @@ namespace LmpClient.VesselUtilities
                 }
             }
 
-            node.fsm.StartFSM(targetState);
+            // PiMP (14 Nov 2026): KSP's enter-state handlers for the docked states read otherNode;
+            // without one they throw and leave the FSM half started, throwing every frame.
+            if (node.otherNode == null && targetState != null && targetState.StartsWith("Docked"))
+            {
+                LunaLog.LogWarning($"[LMP]: Docking port FSM recovery skipped: no partner port for '{targetState}' " +
+                    $"on part {node.part?.partName} (flightID: {node.part?.flightID})");
+                return false;
+            }
+
+            try
+            {
+                node.fsm.StartFSM(targetState);
+            }
+            catch (Exception e)
+            {
+                LunaLog.LogError($"[LMP]: Docking port FSM recovery to '{targetState}' threw; going back to '{currentState}'. {e.Message}");
+                try { node.fsm.StartFSM(currentState); } catch (Exception) { /* nothing more to try */ }
+                return false;
+            }
 
             var newState = node.fsm.currentStateName;
             if (newState == targetState)
@@ -423,6 +464,14 @@ namespace LmpClient.VesselUtilities
                                 $"({dockedPartner.part?.flightID}): {dockedPartner.dockedPartUId} -> {node.part.flightID}");
                             dockedPartner.dockedPartUId = node.part.flightID;
                         }
+                    }
+                    else if (IsPreAttachedToAPart(node))
+                    {
+                        // PiMP (14 Nov 2026): a port built in the editor onto a part that is not a
+                        // docking port (an LM's port on the CSM's engine bell) is PreAttached with no
+                        // partner node, and that is its correct state: KSP offers "Decouple Node" for
+                        // it. Resetting it to Ready, as below, took that away and left an Undock
+                        // button that could only fail.
                     }
                     else
                     {

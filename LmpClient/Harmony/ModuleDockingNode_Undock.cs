@@ -21,6 +21,8 @@ namespace LmpClient.Harmony
                 LunaLog.LogWarning($"[LMP]: Blocking ModuleDockingNode.Undock. {failureReason}. " +
                     $"Part: {__instance.part?.partName}, Vessel: {__instance.vessel?.id}, " +
                     $"PartFlightId: {__instance.part?.flightID}");
+                // PiMP (14 Nov 2026): say so in the game, not only in the log.
+                ScreenMessages.PostScreenMessage("This port is not docked to another port, so it cannot undock.", 5f, ScreenMessageStyle.UPPER_CENTER);
                 return false;
             }
 

@@ -158,6 +158,8 @@
     <Compile Include="Pimp\PimpConsensusFollower.cs" />
     <Compile Include="Pimp\PimpScenarioOrder.cs" />
     <Compile Include="Pimp\PimpPartCatalog.cs" />
+    <Compile Include="Pimp\PimpFlightPlanGuard.cs" />
+    <Compile Include="Pimp\PimpMapFilters.cs" />
     <Compile Include="Pimp\PimpConsensusUi.cs" />
     <Compile Include="Pimp\PimpWarpReporter.cs" />
     <Compile Include="Pimp\TimeWarp_WarpTo.cs" />
@@ -175,6 +177,7 @@
     <Compile Include="Extensions\VesselExtension.cs" />
     <Compile Include="Extensions\VesselPartCreator.cs" />
     <Compile Include="Harmony\ActionGroupList_ToggleGroup.cs" />
+    <Compile Include="Harmony\Vessel_BackupVessel.cs" />
     <Compile Include="Harmony\EVAConstructionModeEditor_AttachPart.cs" />
     <Compile Include="Harmony\EVAConstructionModeEditor_DropAttachablePart.cs" />
     <Compile Include="Harmony\ModuleDockingNode_DockToVessel.cs" />

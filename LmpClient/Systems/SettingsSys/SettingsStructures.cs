@@ -10,6 +10,8 @@ namespace LmpClient.Systems.SettingsSys
     public class SettingStructure
     {
         public string Language { get; set; } = "English";
+        /// <summary>PiMP (14 Nov 2026): the map's vessel-type filters as last set by the player; 0 = never set. See PimpMapFilters.</summary>
+        public int MapViewFilterState { get; set; } = 0;
         public string PlayerName { get; set; } = "Player";
         public int ConnectionTries { get; set; } = 3;
         public int InitialConnectionMsTimeout { get; set; } = 5000;
