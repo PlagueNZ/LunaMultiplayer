@@ -181,6 +181,7 @@ namespace LmpClient.Systems.VesselProtoSys
         private void CheckAndSendManeuverChanges(Vessel vessel)
         {
             if (vessel == null) return;
+            if (Pimp.PimpNodeTeardown.Active) return;   // PiMP (14 Nov 2026): KSP is clearing the nodes as flight ends
             if (!LockSystem.LockQuery.UpdateLockBelongsToPlayer(vessel.id, SettingsSystem.CurrentSettings.PlayerName)) return;
 
             var signature = GetManeuverSignature(vessel);

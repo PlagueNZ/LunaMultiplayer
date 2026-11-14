@@ -183,6 +183,8 @@ namespace LmpClient.Systems.VesselProtoSys
         public void ManeuverNodeRemoved(Vessel vessel, PatchedConicSolver solver)
         {
             if (VesselCommon.IsSpectating) return;
+            // PiMP (14 Nov 2026): KSP clearing the nodes as flight ends is not the player's removal.
+            if (Pimp.PimpNodeTeardown.Active) return;
             if (!LockSystem.LockQuery.UpdateLockBelongsToPlayer(vessel.id, SettingsSystem.CurrentSettings.PlayerName)) return;
 
             System.MessageSender.SendVesselMessage(vessel);
