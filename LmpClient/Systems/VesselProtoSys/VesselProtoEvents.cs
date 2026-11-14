@@ -5,6 +5,7 @@ using LmpClient.Systems.ShareScienceSubject;
 using LmpClient.Utilities;
 using LmpClient.VesselUtilities;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
@@ -188,6 +189,32 @@ namespace LmpClient.Systems.VesselProtoSys
             WriteManeuverLog("REMOVED", vessel, solver);
         }
 
+        /// <summary>PiMP: the call chain that led to a node removal, without LMP's and the event system's own frames.</summary>
+        private static string Caller()
+        {
+            try
+            {
+                var frames = new System.Diagnostics.StackTrace(2, false).GetFrames();
+                if (frames == null) return "?";
+                var names = new List<string>();
+                foreach (var frame in frames)
+                {
+                    var m = frame.GetMethod();
+                    var t = m?.DeclaringType;
+                    if (t == null) continue;
+                    var n = t.FullName ?? t.Name;
+                    if (n.StartsWith("EventData") || n.StartsWith("EventVoid")) continue;
+                    names.Add(n + "." + m.Name);
+                    if (names.Count >= 10) break;
+                }
+                return names.Count == 0 ? "?" : string.Join(" <- ", names.ToArray());
+            }
+            catch (Exception e)
+            {
+                return "? (" + e.Message + ")";
+            }
+        }
+
         /// <summary>
         /// Appends maneuver-node diagnostics to LMP_ManeuverNodes.log.
         /// </summary>
@@ -220,6 +247,17 @@ namespace LmpClient.Systems.VesselProtoSys
                             $"T-: {(int)ts.TotalHours:D2}:{ts.Minutes:D2}:{ts.Seconds:D2} ({timeUntil:F1}s) | " +
                             $"ΔV: {dvMag:F2} m/s | Pro: {dv.z:F2} | Nor: {dv.y:F2} | Rad: {dv.x:F2}");
                     }
+                }
+
+                // PiMP (14 Nov 2026): who removed it. On Jacob's Steam install a hand-made node was
+                // removed by something in the same second he left flight, and the server then stored an
+                // empty plan; KSP itself only removes a node in PatchedConicSolver.RemoveManeuverNode,
+                // so the caller is a mod or a button. Logged here and in KSP.log.
+                if (action == "REMOVED")
+                {
+                    var caller = Caller();
+                    sb.AppendLine($"[{now}]   removed by: {caller} | scene {HighLogic.LoadedScene}");
+                    LunaLog.Log($"[LMP]: [PiMP] Manoeuvre node removed from {vessel.vesselName} by: {caller}");
                 }
 
                 File.AppendAllText(logPath, sb.ToString());
