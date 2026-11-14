@@ -10,21 +10,33 @@ namespace LmpClient.Pimp
     /// player's choices were gone after every restart. Now the choice is kept in this install's LMP
     /// settings whenever it changes, and the blank game starts from it.
     /// </summary>
-    internal static class PimpMapFilters
+    internal sealed class PimpMapFilters
     {
+        // KSP's GameEvents need an instance handler: EventData.EvtDelegate reads evt.Target.GetType(),
+        // so a static method (Target null) throws in Add, which disconnected the game at join (pimp.14).
+        private static readonly PimpMapFilters Instance = new PimpMapFilters();
+
         /// <summary>The state upstream LMP set at every join.</summary>
         private const int DefaultState = -1026;
 
-        public static void Register() => GameEvents.OnMapViewFiltersModified.Add(OnModified);
+        public static void Register()
+        {
+            try { GameEvents.OnMapViewFiltersModified.Add(Instance.OnModified); }
+            catch (Exception e) { LunaLog.LogError($"[LMP]: [PiMP] Map filters not watched: {e.Message}"); }
+        }
 
-        public static void Unregister() => GameEvents.OnMapViewFiltersModified.Remove(OnModified);
+        public static void Unregister()
+        {
+            try { GameEvents.OnMapViewFiltersModified.Remove(Instance.OnModified); }
+            catch (Exception) { /* not registered */ }
+        }
 
         /// <summary>The filter state a new blank game starts with.</summary>
         public static int StartState => SettingsSystem.CurrentSettings.MapViewFilterState != 0
             ? SettingsSystem.CurrentSettings.MapViewFilterState
             : DefaultState;
 
-        private static void OnModified(MapViewFiltering.VesselTypeFilter filter)
+        private void OnModified(MapViewFiltering.VesselTypeFilter filter)
         {
             try
             {
